@@ -1,0 +1,14 @@
+{
+  "name": "base",
+  "version": "5.0.1",
+  "main": "index.html",
+  "repository": {},
+  "dependencies": {
+    "http-server": "^14.1.1"
+  },
+  "scripts": {
+    "build": "npx tsc",
+    "watch": "npx tsc --watch --preserveWatchOutput",
+    "serve": "npx http-server ."
+  }
+}

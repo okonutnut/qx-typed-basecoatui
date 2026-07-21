@@ -1,0 +1,59 @@
+= NOTE: This project is a fork of https://github.com/jbaron/qx-typed. All credit for the original work goes to the upstream author. See the original repository for source, documentation, and updates.
+
+= QX Typed
+:icons: font
+
+== Introduction
+This is a small demo application that demonstrates how you can easily use qooxdoo from
+a TypeScript project. This application can also serve as a template to build your own application.
+
+The easiest way is to try it out and get started is:
+
+== How to get started
+All you really need to do is implement a function with the following signature: 
+
+----
+someFunctionName(app: qx.application.Standalone): void
+----
+
+and then register it:
+
+----
+qx.registry.registerMainMethod(someFunctionName);
+----
+
+Within this function you can use all the qooxdoo widgets you like and it is behaves just like a normal qooxdoo application. The benefit is that because of TypeScript you get all kind of benefits like code completion, type checking and easy navigation.
+You can use the provided application (application.ts) as an template to see how to create some simple widgets. 
+
+
+To compile your code after editing (assuming you have installed TypeScript) and then see your application in action, use the following two commands:
+----
+tsc
+----
+
+Or this 
+----
+npx tsc -watch --preserveWatchOutput
+----
+
+for live editing.
+
+You can also use Live Server VSCode extention to serve this in realtime during dev mode.
+
+== Sidebar Configuration
+
+Sidebar items require a corresponding page in `PAGE_DEFINITIONS` to render. The `manipulateSidebarItems` function filters out any leaf item that doesn't have a matching page.
+
+To add a new item to the sidebar, you must add both:
+1. A page definition in `PAGE_DEFINITIONS` with `label`, `iconName`, and `element`
+2. A sidebar item in `SIDEBAR_DEFINITIONS` with matching `label`
+
+Sidebar items support the following optional properties:
+- `disabled?: boolean` - Disables the item, making it non-clickable
+- `hidden?: boolean` - Hides the item from the sidebar entirely
+
+== License
+This application uses much of qooxdoo and for those part the same license applies as qooxdoo. So either LGPL or EPL.
+See also qooxdoo.org for more details.
+
+For the remaining part the Apache License is applicable (mainly the qooxdoo.d.ts file).
