@@ -1,6 +1,7 @@
 interface SidebarItem {
   label: string;
   icon?: InlineSvgIcon;
+  action?: () => void;
   disabled?: boolean;
   hidden?: boolean;
   children?: SidebarItem[];
@@ -245,8 +246,15 @@ class Sidebar extends qx.ui.container.Composite {
     this.__footer.onAction((action) => {
       if (action === "logout" && this.__config.callbacks.onLogout) {
         this.__config.callbacks.onLogout();
+        this.fireDataEvent("action", action);
+      } else {
+        const pageAction = action === "change-password"
+          ? "Change Password"
+          : action === "multi-factor-auth"
+            ? "Multi-Factor Authentication"
+            : action;
+        this.fireDataEvent("action", pageAction);
       }
-      this.fireDataEvent("action", action);
     });
     this.add(footer);
 
@@ -348,6 +356,10 @@ class Sidebar extends qx.ui.container.Composite {
 
         if (item.disabled) {
           button.setEnabled(false);
+        } else if (item.action) {
+          button.onClick(() => {
+            item.action!();
+          });
         } else {
           button.onClick(() => {
             this.__activeLeafLabel = item.label;
@@ -381,6 +393,10 @@ class Sidebar extends qx.ui.container.Composite {
             if (this.__isAnimating || !item.children) return;
             this.__stack.push({ label: item.label, items: item.children });
             this.__renderVisibleItems(true);
+          });
+        } else if (item.action) {
+          button.onClick(() => {
+            item.action!();
           });
         } else {
           button.setActive(item.label === this.__activeLeafLabel);
@@ -485,8 +501,9 @@ class Sidebar extends qx.ui.container.Composite {
     label: string,
     icon: InlineSvgIcon | undefined,
     hasChildren: boolean,
+    className?: string,
   ): BsSidebarButton {
-    const button = new BsSidebarButton(label, icon);
+    const button = new BsSidebarButton(label, icon, className);
     button.setAllowGrowX(true);
     button.setCollapsed(this.__collapsed);
     button.setWidth(this.__collapsed ? this.__config.sidebar.collapsedWidth : this.__config.sidebar.width);
@@ -523,6 +540,8 @@ class Sidebar extends qx.ui.container.Composite {
     const endWidth = collapsed ? 0 : w;
     const startOpacity = collapsed ? "1" : "0";
     const endOpacity = collapsed ? "0" : "1";
+
+    this.__footer.setCollapsed(collapsed);
 
     if (skipAnimation) {
       this.setWidth(endWidth);
@@ -712,6 +731,13 @@ class Navbar extends qx.ui.container.Composite {
 
     actionsMenu.add(
       this.__createActionsMenuButton(
+        "Change Log",
+        new InlineSvgIcon("file-text", 16),
+        "change-log",
+      ),
+    );
+    actionsMenu.add(
+      this.__createActionsMenuButton(
         "Support",
         new InlineSvgIcon("help-circle", 16),
         "support",
@@ -726,7 +752,9 @@ class Navbar extends qx.ui.container.Composite {
     );
     this.addListener("action", (ev: qx.event.type.Data) => {
       const action = ev.getData() as string;
-      if (action === "support" && this.__config.callbacks.onSupport) {
+      if (action === "change-log" && this.__config.callbacks.onChangeLog) {
+        this.__config.callbacks.onChangeLog();
+      } else if (action === "support" && this.__config.callbacks.onSupport) {
         this.__config.callbacks.onSupport();
       } else if (action === "show-about-dialog" && this.__config.callbacks.onAbout) {
         this.__config.callbacks.onAbout();
@@ -862,6 +890,9 @@ class MainLayout extends qx.ui.container.Composite {
     mobileAccount.setCollapsed(true);
     mobileAccount.setAllowGrowX(false);
     mobileAccount.setAlignY("middle");
+    mobileAccount.onAction((action) => {
+      if (action === "logout") this.fireEvent("logout");
+    });
     const mobileAccountSlot = new qx.ui.container.Composite(
       new qx.ui.layout.Grow(),
     );
@@ -870,9 +901,6 @@ class MainLayout extends qx.ui.container.Composite {
     mobileAccountSlot.setWidth(40);
     mobileAccountSlot.setHeight(40);
     mobileAccountSlot.add(mobileAccount);
-    mobileAccount.onAction((action) => {
-      if (action === "logout") this.fireEvent("logout");
-    });
     mobileTopBar.add(mobileAccountSlot);
     mobileTopBar.exclude();
 
@@ -961,8 +989,14 @@ class MainLayout extends qx.ui.container.Composite {
     });
 
     this.__sidebar.addListener("action", (ev: qx.event.type.Data) => {
-      if ((ev.getData() as string) === "logout") {
+      const action = ev.getData() as string;
+      if (action === "logout") {
         this.fireEvent("logout");
+      } else {
+        const page = getPage(action);
+        if (page) {
+          (globalThis as any).setContent(page, action);
+        }
       }
     });
 

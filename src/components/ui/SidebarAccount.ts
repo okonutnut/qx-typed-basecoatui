@@ -1,6 +1,5 @@
 class BsSidebarAccount extends qx.ui.basic.Atom {
   static events = {
-    execute: "qx.event.type.Event",
     action: "qx.event.type.Data",
   };
 
@@ -65,11 +64,8 @@ class BsSidebarAccount extends qx.ui.basic.Atom {
       new qx.ui.layout.VBox(0),
     );
     this.__menuContainer.set({
-      minWidth: 224,
-      paddingTop: 6,
-      paddingRight: 6,
-      paddingBottom: 6,
-      paddingLeft: 6,
+      minWidth: 180,
+      padding: 4,
       backgroundColor: AppColors.card(),
       textColor: AppColors.foreground(),
     });
@@ -83,10 +79,10 @@ class BsSidebarAccount extends qx.ui.basic.Atom {
       this.__renderButton();
     });
 
-    this.__name = name ?? "Ronan Berder";
-    this.__username = username ?? "@hunvreus";
-    this.__avatarSrc = avatarSrc ?? "resource/app/user.png";
-    this.__avatarFallback = avatarFallback ?? "RB";
+    this.__name = name ?? "";
+    this.__username = username ?? "";
+    this.__avatarSrc = avatarSrc ?? "";
+    this.__avatarFallback = avatarFallback ?? "";
     this.__className = className ?? "";
 
     this.__renderButton();
@@ -134,7 +130,6 @@ class BsSidebarAccount extends qx.ui.basic.Atom {
 
         ev.preventDefault();
         ev.stopPropagation();
-        this.fireEvent("execute");
         this.__toggleMenu();
       };
       root.addEventListener("click", this.__rootClickHandler);
@@ -207,6 +202,15 @@ class BsSidebarAccount extends qx.ui.basic.Atom {
 
   private __openMenu(): void {
     const token = ++this.__menuAnimToken;
+
+    if (!this.__collapsed) {
+      const triggerRoot = this.__htmlButton.getContentElement().getDomElement();
+      const triggerEl = triggerRoot?.querySelector("[data-account-trigger]") as HTMLButtonElement | null;
+      if (triggerEl) {
+        (this.__menuPopup as any).setWidth(triggerEl.offsetWidth);
+      }
+    }
+
     this.__menuPopup.show();
     this.__isMenuOpen = true;
     this.__renderButton();
@@ -319,28 +323,18 @@ class BsSidebarAccount extends qx.ui.basic.Atom {
   }
 
   private __buildMenuWidgets(): void {
-    const heading = new qx.ui.basic.Label("My Account");
-    heading.set({
-      paddingTop: 4,
-      paddingRight: 8,
-      paddingBottom: 4,
-      paddingLeft: 8,
-      textColor: AppColors.mutedForeground(),
-    });
-    this.__menuContainer.add(heading);
-
     this.__menuContainer.add(
       this.__createMenuButton(
-        "Profile",
-        new InlineSvgIcon("user-cog", 16),
-        "⇧⌘P",
+        "Change Password",
+        new InlineSvgIcon("lock", 16),
+        "change-password",
       ),
     );
     this.__menuContainer.add(
       this.__createMenuButton(
-        "Settings",
-        new InlineSvgIcon("settings", 16),
-        "⌘S",
+        "Multi-Factor Authentication",
+        new InlineSvgIcon("shield", 16),
+        "multi-factor-auth",
       ),
     );
 
@@ -406,30 +400,33 @@ class BsSidebarAccount extends qx.ui.basic.Atom {
     const avatarSrc = this.__escape(this.__avatarSrc);
     const avatarFallback = this.__escape(this.__avatarFallback);
     const chevronUpDown = this.__chevronUpDownHTML;
-    const contentPart = this.__collapsed
-      ? `
-        <span class="relative inline-flex size-8 shrink-0 rounded-full overflow-hidden">
-          <img class="size-full object-cover" alt="${name}" src="${avatarSrc}" />
-          <span class="absolute inset-0 hidden items-center justify-center bg-muted text-muted-foreground text-xs font-medium" data-avatar-fallback>
-            ${avatarFallback}
-          </span>
+
+    const avatarHtml = `
+      <span class="relative inline-flex size-8 shrink-0 rounded-full overflow-hidden border-2 border-sidebar-border">
+        <img class="size-full object-cover" alt="${name}" src="${avatarSrc}" />
+        <span class="absolute inset-0 hidden items-center justify-center bg-muted text-muted-foreground text-xs font-medium" data-avatar-fallback>
+          ${avatarFallback}
         </span>
-      `
+      </span>
+    `;
+
+    const textHtml = this.__collapsed
+      ? ""
       : `
-        <span class="relative inline-flex size-8 shrink-0 rounded-full overflow-hidden">
-          <img class="size-full object-cover" alt="${name}" src="${avatarSrc}" />
-          <span class="absolute inset-0 hidden items-center justify-center bg-muted text-muted-foreground text-xs font-medium" data-avatar-fallback>
-            ${avatarFallback}
-          </span>
-        </span>
-        <span class="min-w-0 flex-1 text-left">
-          <span class="block truncate text-sm font-medium text-foreground leading-tight">${name}</span>
-          <span class="block truncate text-xs text-muted-foreground leading-tight">${username}</span>
-        </span>
-        <span class="flex flex-col text-muted-foreground leading-none items-center justify-center">
-          ${chevronUpDown}
-        </span>
-      `;
+      <span class="min-w-0 flex-1 text-left">
+        <span class="block truncate text-sm font-medium text-sidebar-foreground leading-tight">${name}</span>
+        <span class="block truncate text-xs text-muted-foreground leading-tight">${username}</span>
+      </span>
+    `;
+
+    const chevronHtml = this.__collapsed
+      ? ""
+      : `
+      <span class="flex flex-col text-muted-foreground leading-none items-center justify-center">
+        ${chevronUpDown}
+      </span>
+    `;
+
     const classes = [
       "w-full",
       "h-10",
@@ -438,9 +435,7 @@ class BsSidebarAccount extends qx.ui.basic.Atom {
       "gap-2",
       "rounded-md",
       "btn-sm-ghost",
-      this.__collapsed ? "px-0 py-0" : "px-0.5",
-      this.__collapsed ? "py-0" : "py-1.5",
-      this.__collapsed ? "justify-center" : "justify-start",
+      this.__collapsed ? "px-0 py-0 justify-center" : "px-0.5 py-1.5 justify-start",
       this.__className,
     ]
       .filter(Boolean)
@@ -455,7 +450,9 @@ class BsSidebarAccount extends qx.ui.basic.Atom {
           aria-expanded="${this.__isMenuOpen ? "true" : "false"}"
           class="${classes}"
         >
-          ${contentPart}
+          ${avatarHtml}
+          ${textHtml}
+          ${chevronHtml}
         </button>
       </div>
     `);
@@ -493,11 +490,6 @@ class BsSidebarAccount extends qx.ui.basic.Atom {
     this.addListener("action", (ev: qx.event.type.Data) => {
       handler((ev.getData() as string) ?? "");
     });
-    return this;
-  }
-
-  public onClick(handler: () => void): this {
-    this.addListener("execute", handler);
     return this;
   }
 }

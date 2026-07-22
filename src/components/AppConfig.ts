@@ -20,6 +20,7 @@ interface AppConfig {
     onLogout: () => void;
     onAbout?: () => void;
     onSupport?: () => void;
+    onChangeLog?: () => void;
     onSettings?: () => void;
     onProfile?: () => void;
   };
@@ -51,7 +52,7 @@ const DEFAULT_APP_CONFIG: AppConfig = {
     onLogout: () => {},
   },
   sidebar: {
-    width: 230,
+    width: 260,
     collapsedWidth: 56,
   },
 };

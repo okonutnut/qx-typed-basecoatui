@@ -163,6 +163,13 @@ class BsSidebarButton extends qx.ui.basic.Atom {
     return this;
   }
 
+  public setClassName(className: string): this {
+    if (this.__className === className) return this;
+    this.__className = className;
+    this.__scheduleRender();
+    return this;
+  }
+
   public setEnabled(enabled: boolean): this {
     if (this.__enabled === enabled) return this;
     this.__enabled = enabled;
