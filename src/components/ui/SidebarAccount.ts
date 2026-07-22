@@ -66,7 +66,7 @@ class BsSidebarAccount extends qx.ui.basic.Atom {
     this.__menuContainer.set({
       minWidth: 180,
       padding: 4,
-      backgroundColor: AppColors.card(),
+      backgroundColor: AppColors.sidebar(),
       textColor: AppColors.foreground(),
     });
     this.__menuPopup.add(this.__menuContainer);
@@ -209,6 +209,8 @@ class BsSidebarAccount extends qx.ui.basic.Atom {
       if (triggerEl) {
         (this.__menuPopup as any).setWidth(triggerEl.offsetWidth);
       }
+    } else {
+      (this.__menuPopup as any).setWidth(Math.round(window.innerWidth / 2 + 40));
     }
 
     this.__menuPopup.show();

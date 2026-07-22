@@ -52,7 +52,7 @@ const DEFAULT_APP_CONFIG: AppConfig = {
     onLogout: () => {},
   },
   sidebar: {
-    width: 260,
+    width: 300,
     collapsedWidth: 56,
   },
 };
