@@ -940,15 +940,10 @@ class MainLayout extends qx.ui.container.Composite {
     contentContainer.add(mobileTopBar);
     contentContainer.add(navbar);
 
-    const mainContentContainer = new qx.ui.container.Composite(
-      new qx.ui.layout.Grow(),
-    );
-    const mainContentScroll = new qx.ui.container.Scroll();
     const pageCache = new Map<string, qx.ui.core.Widget>();
     if (pageTitle) {
       pageCache.set(pageTitle, content);
     }
-    let currentPage = content;
 
     const getPage = (label: string): qx.ui.core.Widget | null => {
       const cached = pageCache.get(label);
@@ -962,21 +957,99 @@ class MainLayout extends qx.ui.container.Composite {
       return page;
     };
 
-    mainContentContainer.setPadding(5);
-    mainContentContainer.add(content, { edge: 0 });
+    const tabView = new qx.ui.tabview.TabView("top");
+    tabView.setContentPadding(0);
+    tabView.setAllowGrowX(true);
+
+    const tabBarStyle = document.createElement("style");
+    tabBarStyle.textContent = `
+      .qx-tabview {
+        max-width: 100dvw;
+      }
+      .qx-tabview-bar {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+      }
+      .qx-tabview-bar::-webkit-scrollbar {
+        display: none;
+      }
+    `;
+    document.head.appendChild(tabBarStyle);
+
+    const styleTabButton = (button: any, isSelected: boolean) => {
+      if (isSelected) {
+        button.setDecorator(
+          new qx.ui.decoration.Decorator().set({
+            widthBottom: 2,
+            styleBottom: "solid",
+            colorBottom: AppColors.primary(),
+          }),
+        );
+      } else {
+        button.resetDecorator();
+      }
+    };
+
+    tabView.addListener("changeSelection", () => {
+      const selected = tabView.getSelection();
+      tabView.getChildren().forEach((page: qx.ui.tabview.Page) => {
+        const btn = page.getButton() as any;
+        if (btn) styleTabButton(btn, selected.indexOf(page) !== -1);
+      });
+    });
+
+    const createTabPage = (
+      pageWidget: qx.ui.core.Widget,
+      label: string,
+    ): qx.ui.tabview.Page => {
+      const tabPage = new qx.ui.tabview.Page(label);
+      tabPage.setLayout(new qx.ui.layout.Grow());
+
+      const pageScroll = new qx.ui.container.Scroll();
+      pageScroll.add(pageWidget);
+      tabPage.add(pageScroll, { edge: 0 });
+
+      const button = tabPage.getButton() as any;
+      if (button && typeof button.setShowCloseButton === "function") {
+        button.setShowCloseButton(true);
+      }
+
+      tabPage.addListener("close", () => {
+        tabView.remove(tabPage);
+        pageCache.delete(label);
+      });
+
+      return tabPage;
+    };
+
+    if (pageTitle) {
+      const initialTab = createTabPage(content, pageTitle);
+      tabView.add(initialTab);
+      tabView.setSelection([initialTab]);
+    }
 
     (globalThis as any).setContent = (contentOrFactory: any, title: string) => {
+      const existing = tabView.getChildren().find(
+        (p: qx.ui.tabview.Page) => p.getLabel() === title,
+      );
+      if (existing) {
+        tabView.setSelection([existing]);
+        if (title) navbar.setPageTitle(title);
+        if (isMobileMode) sidebarDrawer?.close();
+        return;
+      }
+
       const nextPage =
         typeof contentOrFactory === "function"
           ? contentOrFactory()
           : contentOrFactory;
-      if (nextPage === currentPage) return;
 
-      mainContentContainer.removeAll();
-      mainContentContainer.add(nextPage, { edge: 0 });
-      currentPage = nextPage;
+      const tabPage = createTabPage(nextPage, title || "Page");
+      tabView.add(tabPage);
+      tabView.setSelection([tabPage]);
+      navbar.setPageTitle(title);
 
-      if (title) navbar.setPageTitle(title);
       if (isMobileMode) sidebarDrawer?.close();
     };
 
@@ -1000,8 +1073,7 @@ class MainLayout extends qx.ui.container.Composite {
       }
     });
 
-    mainContentScroll.add(mainContentContainer);
-    contentContainer.add(mainContentScroll, { flex: 1, edge: 0 });
+    contentContainer.add(tabView, { flex: 1, edge: 0 });
 
     const syncResponsiveMode = () => {
       const nextIsMobile = qx.bom.Viewport.getWidth() < MOBILE_BREAKPOINT;
