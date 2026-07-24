@@ -9,10 +9,6 @@ class BasePage extends qx.ui.container.Composite {
     this.setPadding(10);
     this.__refreshResponsiveValues();
     qx.event.Registration.addListener(window, "resize", this._onResize, this);
-
-    console.log("BasePage initialized with responsive width:", this.__responsiveWidth, "and height:", this.__responsiveHeight);
-
-    console.log("Half responsive width:", this.__halfResponsiveWidth, "and half responsive height:", this.__halfResponsiveHeight);
   }
 
   public getResponsiveWidth(): number {
