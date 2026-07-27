@@ -10,6 +10,7 @@ interface AppConfig {
   user: {
     name: string;
     role: string;
+    accessCode?: string;
   };
   login: {
     title: string;

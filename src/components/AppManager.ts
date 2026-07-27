@@ -43,17 +43,21 @@ class AppManager {
 
   private __createMainLayout(): MainLayout {
     const pageMap = this.__extractPageMap();
-    const sidebarItems = AppPages.manipulateSidebarItems(
+    let sidebarItems = AppPages.manipulateSidebarItems(
       AppPages.createSidebarItems(this.__routes),
       pageMap,
     );
-    const initialPage = new PlaceholderPage("Welcome");
+    const accessCode = this.__config.user.accessCode;
+    if (accessCode) {
+      sidebarItems = AppPages.filterByAccessCode(sidebarItems, accessCode);
+    }
+    const initialPage = new PlaceholderPage("Admission System — Select an entity from the sidebar to begin");
 
     const mainLayout = new MainLayout(
       initialPage,
       sidebarItems,
       pageMap,
-      "Welcome",
+      "Dashboard",
       this.__config,
     );
     mainLayout.addListener("logout", () => {
@@ -64,7 +68,13 @@ class AppManager {
 
   private __createFullscreenLayout(): FullscreenLayout {
     const layout = new FullscreenLayout(this.__config);
-    layout.addListener("login", () => {
+    layout.addListener("login", (ev: qx.event.type.Data) => {
+      const userData = ev.getData() as any;
+      if (userData) {
+        this.__config.user.name = userData.name;
+        this.__config.user.role = userData.role;
+        this.__config.user.accessCode = userData.accessCode;
+      }
       this.setLayout("main");
     });
     return layout;
@@ -91,7 +101,7 @@ class AppManager {
     }
   }
 
-  start(initialMode: "main" | "fullscreen" = "main"): void {
+  start(initialMode: "main" | "fullscreen" = "fullscreen"): void {
     (globalThis as any).appManager = this;
     this.setLayout(initialMode);
   }

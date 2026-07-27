@@ -195,6 +195,12 @@ class BsButton extends qx.ui.basic.Atom {
     return this;
   }
 
+  public setText(value: string): this {
+    this.__buttonText = value ?? "";
+    this.__renderButton();
+    return this;
+  }
+
   public onClick(handler: () => void): this {
     this.addListener("execute", handler);
     return this;

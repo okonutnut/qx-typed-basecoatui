@@ -107,7 +107,7 @@ class BsSelect extends qx.ui.basic.Atom {
     const classes = ["select", this.__className].filter(Boolean).join(" ");
 
     this.__htmlSelect.setHtml(`
-      <div class="p-1">
+      <div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;">
         <select class="w-full ${classes}" ${tabIndexAttr}>
           ${optionsHtml}
         </select>

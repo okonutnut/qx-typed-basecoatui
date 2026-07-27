@@ -4,16 +4,25 @@ interface SidebarItem {
   action?: () => void;
   disabled?: boolean;
   hidden?: boolean;
+  accessCode?: string;
   children?: SidebarItem[];
 }
 
 class FullscreenLayout extends qx.ui.container.Composite {
   static events = {
-    login: "qx.event.type.Event",
+    login: "qx.event.type.Data",
   };
 
   private __config: AppConfig;
+  private __card: qx.ui.container.Composite;
   private __loginLogo: qx.ui.basic.Image;
+  private __usernameInput: BsInput;
+  private __passwordInput: BsPassword;
+  private __loginError: qx.ui.basic.Label;
+  private __submitBtn: BsButton;
+  private __applyBtn: BsButton;
+  private __submitting = false;
+  private __admissionFormControl: FormControl | null = null;
 
   constructor(config?: Partial<AppConfig>) {
     super(
@@ -22,28 +31,19 @@ class FullscreenLayout extends qx.ui.container.Composite {
     this.__config = { ...DEFAULT_APP_CONFIG, ...config };
     this.setBackgroundColor(AppColors.background());
 
-    const card = new qx.ui.container.Composite(new qx.ui.layout.VBox(0));
-    card.setWidth(350);
-    card.setAllowGrowX(false);
-    card.setPadding(20);
-    card.setBackgroundColor(AppColors.card());
-    card.setDecorator(
-      new qx.ui.decoration.Decorator().set({
-        width: 1,
-        style: "solid",
-        color: AppColors.border(),
-        radius: 10,
-      }),
-    );
+    this.__card = new qx.ui.container.Composite(new qx.ui.layout.VBox(0));
+    this.__card.setWidth(350);
+    this.__card.setAllowGrowX(false);
 
     this.__loginLogo = new qx.ui.basic.Image(this.__config.resources.logo);
     this.__loginLogo.setAlignX("center");
+    this.__loginLogo.setMarginBottom(20);
     this.__loginLogo.set({
       scale: true,
       width: 64,
       height: 64,
     });
-    card.add(this.__loginLogo);
+    this.__card.add(this.__loginLogo);
 
     const title = new qx.ui.basic.Label(this.__config.login.title);
     title.setTextAlign("center");
@@ -55,44 +55,64 @@ class FullscreenLayout extends qx.ui.container.Composite {
     );
     title.setTextColor(AppColors.foreground());
     title.setMarginBottom(10);
-    card.add(title);
+    this.__card.add(title);
 
-    const location = new qx.ui.basic.Label(this.__config.login.subtitle);
-    location.setTextAlign("center");
-    location.setAlignX("center");
-    location.setAllowGrowX(true);
-    location.setFont(
+    const subTitle = new qx.ui.basic.Label(this.__config.login.subtitle);
+    subTitle.setTextAlign("center");
+    subTitle.setAlignX("center");
+    subTitle.setAllowGrowX(true);
+    subTitle.setFont(
       // @ts-ignore
       new qx.bom.Font(12, ["Inter", "sans-serif"]).set({ bold: true }),
     );
-    location.setTextColor(AppColors.foreground());
-    location.setMarginBottom(30);
-    card.add(location);
+    subTitle.setTextColor(AppColors.foreground());
+    subTitle.setMarginBottom(30);
+    this.__card.add(subTitle);
 
-    const username = new BsInput("", "Username");
-    const password = new BsPassword("", "Password");
-    card.add(username);
-    card.add(password);
+    this.__usernameInput = new BsInput("", "Username");
+    this.__passwordInput = new BsPassword("", "Password");
+    this.__card.add(this.__usernameInput);
+    this.__card.add(this.__passwordInput);
 
-    const loginError = new qx.ui.basic.Label("");
-    loginError.setVisibility("excluded");
-    loginError.setTextAlign("center");
-    loginError.setTextColor(AppColors.destructive());
-    loginError.setMarginTop(4);
-    card.add(loginError);
+    this.__loginError = new qx.ui.basic.Label("");
+    this.__loginError.setVisibility("excluded");
+    this.__loginError.setTextAlign("center");
+    this.__loginError.setTextColor(AppColors.destructive());
+    this.__loginError.setMarginTop(4);
+    this.__card.add(this.__loginError);
 
-    const submit = new BsButton("Sign in", undefined, {
+    this.__submitBtn = new BsButton("Sign in", undefined, {
       variant: "default",
       className: "w-full",
     });
-    submit.setAllowGrowX(true);
-    card.add(submit);
+    this.__submitBtn.setMarginTop(20);
+    this.__submitBtn.setAllowGrowX(true);
+    this.__card.add(this.__submitBtn);
+
+    this.__submitBtn.onClick(() => this.__doLogin());
+
+    const orLabel = new qx.ui.basic.Label("OR");
+    orLabel.setTextAlign("center");
+    orLabel.setAllowGrowX(true);
+    orLabel.setTextColor(AppColors.mutedForeground());
+    orLabel.setMarginTop(12);
+    orLabel.setMarginBottom(4);
+    this.__card.add(orLabel);
+
+    this.__applyBtn = new BsButton("Apply for Admission", undefined, {
+      variant: "outline",
+      className: "w-full",
+    });
+    this.__applyBtn.setAllowGrowX(true);
+    this.__card.add(this.__applyBtn);
+
+    this.__applyBtn.onClick(() => this.__showAdmissionForm());
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Enter") return;
 
       const activeElement = document.activeElement;
-      const cardElement = card.getContentElement().getDomElement();
+      const cardElement = this.__card.getContentElement().getDomElement();
       if (
         !activeElement ||
         !cardElement ||
@@ -101,6 +121,7 @@ class FullscreenLayout extends qx.ui.container.Composite {
         return;
 
       event.preventDefault();
+      this.__doLogin();
     };
 
     document.addEventListener("keydown", onKeyDown);
@@ -108,7 +129,190 @@ class FullscreenLayout extends qx.ui.container.Composite {
       document.removeEventListener("keydown", onKeyDown);
     });
 
-    this.add(card);
+    this.add(this.__card);
+  }
+
+  private async __doLogin(): Promise<void> {
+    if (this.__submitting) return;
+    this.__submitting = true;
+    this.__submitBtn.setEnabled(false);
+    this.__loginError.setVisibility("excluded");
+
+    const code = this.__usernameInput.getValue().trim();
+    const password = this.__passwordInput.getValue();
+
+    if (!code || !password) {
+      this.__loginError.setValue("Enter username and password");
+      this.__loginError.setVisibility("visible");
+      this.__submitting = false;
+      this.__submitBtn.setEnabled(true);
+      return;
+    }
+
+    try {
+      const userData = await loginUser(code, password);
+      if (!userData) {
+        this.__loginError.setValue("Invalid username or password");
+        this.__loginError.setVisibility("visible");
+        this.__submitting = false;
+        this.__submitBtn.setEnabled(true);
+        return;
+      }
+      this.fireDataEvent("login", userData);
+    } catch (err: any) {
+      this.__loginError.setValue(err.message ?? "Login failed");
+      this.__loginError.setVisibility("visible");
+      this.__submitting = false;
+      this.__submitBtn.setEnabled(true);
+    }
+  }
+
+  private __showAdmissionForm(): void {
+    this.remove(this.__card);
+
+    const fullscreenRoot = new qx.ui.container.Composite(new qx.ui.layout.VBox(0));
+    fullscreenRoot.setBackgroundColor(AppColors.background());
+
+    const header = new qx.ui.container.Composite(new qx.ui.layout.HBox(0).set({
+      alignX: "center",
+    }));
+    header.setPadding(16, 24, 16, 24);
+    header.setBackgroundColor(AppColors.card());
+    header.setDecorator(
+      new qx.ui.decoration.Decorator().set({
+        width: [0, 0, 1, 0],
+        style: "solid",
+        color: AppColors.border(),
+      }),
+    );
+
+    const headerTitle = new qx.ui.basic.Label("Apply for Admission");
+    headerTitle.setFont(
+      // @ts-ignore
+      new qx.bom.Font(18, ["Inter", "sans-serif"]).set({ bold: true }),
+    );
+    headerTitle.setTextColor(AppColors.foreground());
+    header.add(headerTitle);
+
+    fullscreenRoot.add(header);
+
+    const centerArea = new qx.ui.container.Composite(new qx.ui.layout.VBox(0).set({ alignX: "center" }));
+    centerArea.setAllowGrowX(true);
+
+    const formCard = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+    formCard.setPadding(16);
+    formCard.setWidth(400);
+
+    const formContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox(12));
+    formContainer.setAllowGrowX(true);
+
+    formCard.add(formContainer);
+    centerArea.add(formCard);
+    fullscreenRoot.add(centerArea, { flex: 1 });
+
+    this.__admissionFormControl = buildAdmissionDataForm(formContainer);
+
+    queryList("Course").then((courses: any[]) => {
+      this.__admissionFormControl?.setReferenceData(
+        "courses",
+        courses.map((c: any) => ({ value: c.id, label: `${c.code} - ${c.name}` })),
+      );
+    });
+
+    const errLabel = new qx.ui.basic.Label("");
+    errLabel.setTextColor(AppColors.destructive());
+    errLabel.setVisibility("excluded");
+    errLabel.setTextAlign("center");
+    fullscreenRoot.add(errLabel);
+
+    const btnRow = new qx.ui.container.Composite(new qx.ui.layout.HBox(12).set({ alignX: "center" }));
+    btnRow.setPadding(15);
+    btnRow.setAllowGrowX(true);
+    btnRow.setDecorator(
+      new qx.ui.decoration.Decorator().set({
+        width: [1, 0, 0, 0],
+        style: "solid",
+        color: AppColors.border(),
+      }),
+    );
+
+    const backBtn = new BsButton("Back to Login", undefined, { variant: "outline", className: "!w-[150px]" });
+    const submitBtn = new BsButton("Submit Application", undefined, { variant: "default", className: "!w-[150px]" });
+
+    btnRow.add(backBtn);
+    btnRow.add(submitBtn);
+    fullscreenRoot.add(btnRow);
+
+    this.add(fullscreenRoot, { flex: 1 });
+
+    backBtn.onClick(() => this.__showLoginForm());
+
+    submitBtn.onClick(async () => {
+      if (!this.__admissionFormControl) return;
+      submitBtn.setEnabled(false);
+      errLabel.setVisibility("excluded");
+      try {
+        const values = this.__admissionFormControl.getValues();
+        await createEntity("AdmissionData", values);
+        BsToast.show({
+          title: "Success",
+          description: "Admission application submitted. An administrator will review your application.",
+          category: "success",
+        });
+        this.__showLoginForm();
+      } catch (err: any) {
+        errLabel.setValue(err.message ?? "Failed to submit application");
+        errLabel.setVisibility("visible");
+        submitBtn.setEnabled(true);
+      }
+    });
+  }
+
+  private __showLoginForm(): void {
+    this.__admissionFormControl = null;
+    this.removeAll();
+    this.add(this.__card);
+
+    this.__card.removeAll();
+
+    this.__card.add(this.__loginLogo);
+    const title = new qx.ui.basic.Label(this.__config.login.title);
+    title.setTextAlign("center");
+    title.setAlignX("center");
+    title.setAllowGrowX(true);
+    title.setFont(
+      // @ts-ignore
+      new qx.bom.Font(16, ["Inter", "sans-serif"]).set({ bold: true }),
+    );
+    title.setTextColor(AppColors.foreground());
+    this.__card.add(title);
+
+    const subTitle = new qx.ui.basic.Label(this.__config.login.subtitle);
+    subTitle.setTextAlign("center");
+    subTitle.setAlignX("center");
+    subTitle.setAllowGrowX(true);
+    subTitle.setFont(
+      // @ts-ignore
+      new qx.bom.Font(12, ["Inter", "sans-serif"]),
+    );
+    subTitle.setTextColor(AppColors.foreground());
+    subTitle.setMarginBottom(30);
+    this.__card.add(subTitle);
+
+    this.__card.add(this.__usernameInput);
+    this.__card.add(this.__passwordInput);
+    this.__card.add(this.__loginError);
+    this.__card.add(this.__submitBtn);
+
+    const orLabel = new qx.ui.basic.Label("OR");
+    orLabel.setTextAlign("center");
+    orLabel.setAllowGrowX(true);
+    orLabel.setTextColor(AppColors.mutedForeground());
+    orLabel.setMarginTop(12);
+    orLabel.setMarginBottom(4);
+    this.__card.add(orLabel);
+
+    this.__card.add(this.__applyBtn);
   }
 
   setLogo(path: string): void {
