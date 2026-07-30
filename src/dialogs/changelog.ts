@@ -7,6 +7,7 @@ function showChangelogDialog(): void {
   ).set({
     font: new qx.bom.Font("14", ["Inter", "sans-serif"]),
     textAlign: "center",
+    wrap: true,
     padding: 20,
   });
 
