@@ -66,15 +66,6 @@ class BsSeparator extends qx.ui.basic.Atom {
     return { width: 0, height: 0 };
   }
 
-  private __escapeHtml(value: string): string {
-    return value
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
-  }
-
   private __render(): void {
     const isHorizontal = this.__orientation === "horizontal";
     const baseClasses = isHorizontal
@@ -84,7 +75,7 @@ class BsSeparator extends qx.ui.basic.Atom {
     const ariaOrientation = this.__decorative
       ? ""
       : `aria-orientation="${this.__orientation}"`;
-    const content = this.__label ? this.__escapeHtml(this.__label) : "";
+    const content = this.__label ? HtmlUtils.escapeAttr(this.__label) : "";
 
     this.__htmlSeparator.setHtml(`
       <div class="${baseClasses} ${this.__className}" ${roleAttr} ${ariaOrientation}>

@@ -242,7 +242,7 @@ class AppPages {
             },
             {
               label: "Utilities",
-              iconName: "tool",
+              iconName: "pocket-knife",
               children: [
                 { label: "Fix Missing Subjects", iconName: "wrench", element: () => new PlaceholderPage("Fix Missing Subjects") },
                 { label: "Post Enrolled Subjects", iconName: "upload", element: () => new PlaceholderPage("Post Enrolled Subjects") },
@@ -280,7 +280,7 @@ class AppPages {
             { label: "Recompute Duplicate Assess Nos", iconName: "calculator", element: () => new PlaceholderPage("Recompute Duplicate Assess Nos") },
             { label: "Merge Duplicate Assess Nos", iconName: "combine", element: () => new PlaceholderPage("Merge Duplicate Assess Nos") },
             { label: "Fix Duplicate Adjust Nos", iconName: "wrench", element: () => new PlaceholderPage("Fix Duplicate Adjust Nos") },
-            { label: "Fix Adjust Nos Gap", iconName: "tool", element: () => new PlaceholderPage("Fix Adjust Nos Gap") },
+            { label: "Fix Adjust Nos Gap", iconName: "wrench", element: () => new PlaceholderPage("Fix Adjust Nos Gap") },
             { label: "Remove Assess Adjustments", iconName: "trash", element: () => new PlaceholderPage("Remove Assess Adjustments") },
           ],
         },

@@ -1,6 +1,9 @@
 class InlineSvgIcon extends qx.ui.embed.Html {
   static iconsBaseUrl = "resource/app/icons/";
 
+  // Shared across every instance — one fetch per icon name, ever.
+  private static __cache = new Map<string, Promise<string>>();
+
   private __name: string;
   private __size: number;
 
@@ -31,40 +34,45 @@ class InlineSvgIcon extends qx.ui.embed.Html {
     this.setHeight(size);
     this.setMinWidth(size);
     this.setMinHeight(size);
-    this.__loadAndRender();
+    // no re-fetch needed — just re-render with cached svg
+    this.__renderFromCache();
   }
 
-  private __loadAndRender() {
-    const url = InlineSvgIcon.iconsBaseUrl + this.__name + ".svg";
+  private __fetchRaw(name: string): Promise<string> {
+    let pending = InlineSvgIcon.__cache.get(name);
+    if (!pending) {
+      const url = InlineSvgIcon.iconsBaseUrl + name + ".svg";
+      pending = fetch(url)
+        .then((r) => r.text())
+        .catch(() => "");
+      InlineSvgIcon.__cache.set(name, pending);
+    }
+    return pending;
+  }
 
-    fetch(url)
-      .then((r) => r.text())
-      .then((svg) => {
-        // Force width/height and make sure it uses currentColor
-        // (If your SVG already has stroke="currentColor", this is harmless.)
-        let out = svg;
+  private __renderFromCache(): void {
+    // re-derive from the (already resolved) cached promise without a new request
+    InlineSvgIcon.__cache.get(this.__name)?.then((svg) => this.__applySvg(svg));
+  }
 
-        // Ensure currentColor (covers hardcoded strokes)
-        out = out.replace(/stroke="[^"]*"/g, `stroke="currentColor"`);
+  private __applySvg(svg: string): void {
+    let out = svg;
+    out = out.replace(/stroke="[^"]*"/g, `stroke="currentColor"`);
+    out = out.replace(/<svg\b[^>]*>/, (tag) => {
+      const cleanedTag = tag
+        .replace(/\swidth="[^"]*"/g, "")
+        .replace(/\sheight="[^"]*"/g, "")
+        .replace(/\sstyle="[^"]*"/g, "");
+      return cleanedTag.replace(
+        "<svg",
+        `<svg width="${this.__size}" height="${this.__size}" style="display:block;"`,
+      );
+    });
+    this.setHtml(out);
+    this.invalidateLayoutCache();
+  }
 
-        // Ensure sizing on root <svg> only (do not touch child element sizes)
-        out = out.replace(/<svg\b[^>]*>/, (tag) => {
-          const cleanedTag = tag
-            .replace(/\swidth="[^"]*"/g, "")
-            .replace(/\sheight="[^"]*"/g, "")
-            .replace(/\sstyle="[^"]*"/g, "");
-
-          return cleanedTag.replace(
-            "<svg",
-            `<svg width="${this.__size}" height="${this.__size}" style="display:block;"`,
-          );
-        });
-
-        this.setHtml(out);
-
-        // Qooxdoo nudge after DOM update
-        this.invalidateLayoutCache();
-      })
-      .catch(() => this.setHtml(""));
+  private __loadAndRender(): void {
+    this.__fetchRaw(this.__name).then((svg) => this.__applySvg(svg));
   }
 }

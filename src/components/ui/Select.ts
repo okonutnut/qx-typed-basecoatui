@@ -37,14 +37,6 @@ class BsSelect extends qx.ui.basic.Atom {
     this.addListener("changeTabIndex", () => this.__syncTabIndex());
   }
 
-  private __escape(value: string): string {
-    return value
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
-  }
-
   private __syncTabIndex(): void {
     if (!this.__selectEl) return;
     this.__selectEl.setAttribute("tabindex", "-1");
@@ -97,7 +89,7 @@ class BsSelect extends qx.ui.basic.Atom {
     const optionsHtml = [
       `<option value="">Select an option</option>`,
       ...this.__options.map((opt) => {
-        const v = this.__escape(opt);
+        const v = HtmlUtils.escapeAttr(opt);
         const selected = this.__value === opt ? "selected" : "";
         return `<option value="${v}" ${selected}>${v}</option>`;
       }),

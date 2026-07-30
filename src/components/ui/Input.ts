@@ -99,14 +99,6 @@ class BsInput extends qx.ui.basic.Atom {
     return { width: 0, height: 0 };
   }
 
-  private __escapeAttr(value: string): string {
-    return value
-      .replace(/&/g, "&amp;")
-      .replace(/"/g, "&quot;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;");
-  }
-
   private __render(): void {
     const hasLeadingIcon = this.__leadingHtml.length > 0;
     const classes = [
@@ -120,8 +112,8 @@ class BsInput extends qx.ui.basic.Atom {
     ]
       .filter(Boolean)
       .join(" ");
-    const value = this.__escapeAttr(this.__value);
-    const placeholder = this.__escapeAttr(this.__placeholder);
+    const value = HtmlUtils.escapeAttr(this.__value);
+    const placeholder = HtmlUtils.escapeAttr(this.__placeholder);
     const tabIndexAttr = 'tabindex="-1"';
 
     this.__htmlInput.setHtml(`
@@ -132,7 +124,7 @@ class BsInput extends qx.ui.basic.Atom {
                 : ""
             }
             <input
-            type="${this.__escapeAttr(this.__type)}"
+            type="${HtmlUtils.escapeAttr(this.__type)}"
             class="${classes}"
             value="${value}"
             placeholder="${placeholder}"

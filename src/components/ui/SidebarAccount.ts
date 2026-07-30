@@ -108,14 +108,6 @@ class BsSidebarAccount extends qx.ui.basic.Atom {
     });
   }
 
-  private __escape(value: string): string {
-    return value
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
-  }
-
   private __bindNativeButton(): void {
     const root = this.__htmlButton.getContentElement().getDomElement();
     if (!root) return;
@@ -397,10 +389,10 @@ class BsSidebarAccount extends qx.ui.basic.Atom {
   }
 
   private __renderButton(): void {
-    const name = this.__escape(this.__name);
-    const username = this.__escape(this.__username);
-    const avatarSrc = this.__escape(this.__avatarSrc);
-    const avatarFallback = this.__escape(this.__avatarFallback);
+    const name = HtmlUtils.escapeAttr(this.__name);
+    const username = HtmlUtils.escapeAttr(this.__username);
+    const avatarSrc = HtmlUtils.escapeAttr(this.__avatarSrc);
+    const avatarFallback = HtmlUtils.escapeAttr(this.__avatarFallback);
     const chevronUpDown = this.__chevronUpDownHTML;
 
     const avatarHtml = `

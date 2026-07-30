@@ -30,21 +30,13 @@ class BsLabel extends qx.ui.basic.Atom {
     });
   }
 
-  private __escapeAttr(value: string): string {
-    return value
-      .replace(/&/g, "&amp;")
-      .replace(/"/g, "&quot;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;");
-  }
-
   private __render(): void {
     const classes = ["label", this.__className]
       .filter(Boolean)
       .join(" ");
 
     const forAttr = this.__for ? `for="${this.__for}"` : "";
-    const text = this.__escapeAttr(this.__text);
+    const text = HtmlUtils.escapeAttr(this.__text);
 
     this.__htmlLabel.setHtml(
       `<label class="${classes}" ${forAttr}>${text}</label>`,

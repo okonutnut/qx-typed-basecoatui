@@ -146,7 +146,7 @@ class BsButton extends qx.ui.basic.Atom {
       <center class="p-1 h-full flex items-center justify-center">
         <button type="button" class="w-[120px] ${classes}" ${tabIndexAttr} style="user-select:none">
           ${iconPart}
-          ${this.__buttonText}
+          ${HtmlUtils.escapeAttr(this.__buttonText)}
         </button>
       </center>
     `);

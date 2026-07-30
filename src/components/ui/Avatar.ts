@@ -42,14 +42,6 @@ class BsAvatar extends qx.ui.basic.Atom {
     });
   }
 
-  private __escape(value: string): string {
-    return value
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
-  }
-
   private __resolveShapeClass(): string {
     if (this.__shape === "rounded") return "rounded-md";
     if (this.__shape === "square") return "rounded-none";
@@ -123,9 +115,9 @@ class BsAvatar extends qx.ui.basic.Atom {
   }
 
   private __render(): void {
-    const src = this.__escape(this.__src);
-    const alt = this.__escape(this.__alt);
-    const fallback = this.__escape(this.__fallback);
+    const src = HtmlUtils.escapeAttr(this.__src);
+    const alt = HtmlUtils.escapeAttr(this.__alt);
+    const fallback = HtmlUtils.escapeAttr(this.__fallback);
     const shapeClass = this.__resolveShapeClass();
     const wrapperClass = [
       "relative",

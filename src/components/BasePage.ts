@@ -3,12 +3,18 @@ class BasePage extends qx.ui.container.Composite {
   protected __responsiveHeight = 0;
   protected __halfResponsiveWidth = 0;
   protected __halfResponsiveHeight = 0;
+  private __resizeTimer: number | null = null;
 
   constructor() {
     super();
     this.setPadding(10);
     this.__refreshResponsiveValues();
-    qx.event.Registration.addListener(window, "resize", this._onResize, this);
+    qx.event.Registration.addListener(
+      window,
+      "resize",
+      this.__onWindowResize,
+      this,
+    );
   }
 
   public getResponsiveWidth(): number {
@@ -27,10 +33,17 @@ class BasePage extends qx.ui.container.Composite {
     return this.__halfResponsiveHeight;
   }
 
-  /**
-   * Called on window resize. Subclasses can override this to update their layouts.
-   * Remember to call super._onResize() in the override.
-   */
+  // Debounce so a window drag doesn't trigger dozens of layout passes.
+  private __onWindowResize = (): void => {
+    if (this.__resizeTimer !== null) {
+      window.clearTimeout(this.__resizeTimer);
+    }
+    this.__resizeTimer = window.setTimeout(() => {
+      this.__resizeTimer = null;
+      this._onResize();
+    }, 100);
+  };
+
   protected _onResize(): void {
     this.__refreshResponsiveValues();
   }
@@ -43,7 +56,6 @@ class BasePage extends qx.ui.container.Composite {
   }
 
   protected __isMobile(): boolean {
-    console.log("Checking if mobile. Current responsive width:", this.__responsiveWidth);
     return this.__responsiveWidth < 768;
   }
 }

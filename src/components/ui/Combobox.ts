@@ -375,7 +375,7 @@ class BsCombobox extends qx.ui.basic.Atom {
 
   private __renderTrigger(): void {
     const selected = this.__options.find((o) => o.value === this.__value);
-    const displayText = selected ? this.__escape(selected.label) : this.__escape(this.__placeholder);
+    const displayText = selected ? HtmlUtils.escapeAttr(selected.label) : HtmlUtils.escapeAttr(this.__placeholder);
     const disabledAttr = this.__disabled ? "disabled" : "";
     const disabledClass = this.__disabled ? "opacity-50 cursor-not-allowed" : "";
 
@@ -394,14 +394,6 @@ class BsCombobox extends qx.ui.basic.Atom {
         </button>
       </div>
     `);
-  }
-
-  private __escape(value: string): string {
-    return value
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
   }
 
   private __setupResizeObserver(): void {
