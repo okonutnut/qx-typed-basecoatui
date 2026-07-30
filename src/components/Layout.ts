@@ -244,9 +244,8 @@ class Sidebar extends qx.ui.container.Composite {
     );
     this.__footer = footer;
     this.__footer.onAction((action) => {
-      if (action === "logout" && this.__config.callbacks.onLogout) {
-        this.__config.callbacks.onLogout();
-        this.fireDataEvent("action", action);
+      if (action === "logout") {
+        this.__config.callbacks.onLogout?.();
       } else {
         const pageAction = action === "change-password"
           ? "Change Password"
@@ -891,7 +890,9 @@ class MainLayout extends qx.ui.container.Composite {
     mobileAccount.setAllowGrowX(false);
     mobileAccount.setAlignY("middle");
     mobileAccount.onAction((action) => {
-      if (action === "logout") this.fireEvent("logout");
+      if (action === "logout") {
+        cfg.callbacks.onLogout?.();
+      }
     });
     const mobileAccountSlot = new qx.ui.container.Composite(
       new qx.ui.layout.Grow(),
@@ -1064,7 +1065,7 @@ class MainLayout extends qx.ui.container.Composite {
     this.__sidebar.addListener("action", (ev: qx.event.type.Data) => {
       const action = ev.getData() as string;
       if (action === "logout") {
-        this.fireEvent("logout");
+        cfg.callbacks.onLogout?.();
       } else {
         const page = getPage(action);
         if (page) {

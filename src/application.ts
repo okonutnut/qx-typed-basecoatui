@@ -10,8 +10,13 @@ function qooxdooMain(app: qx.application.Standalone) {
       subtitle: "Solano, Nueva Vizcaya",
     },
     callbacks: {
-      onLogout: () => appManager.setLayout("fullscreen"),
+      onLogout: () => showLogoutDialog(() => {
+        // TODO: perform actual logout (clear session, revoke tokens, etc.)
+        appManager.setLayout("fullscreen");
+      }),
       onAbout: () => showAboutDialog(),
+      onChangeLog: () => showChangelogDialog(),
+      onSupport: () => showSupportDialog(),
     },
   }, AppPages.ROUTE_DEFINITIONS);
 

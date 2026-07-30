@@ -360,9 +360,19 @@ class BsSidebarAccount extends qx.ui.basic.Atom {
     button.setHeight(40);
 
     button.onClick(() => {
+      this.__closeMenu();
+
+      if (action === "change-password") {
+        showChangePasswordDialog();
+        return;
+      }
+      if (action === "multi-factor-auth") {
+        showMultiFactorAuthDialog();
+        return;
+      }
+
       const normalizedAction = action === "logout-account" ? "logout" : action;
       this.fireDataEvent("action", normalizedAction);
-      this.__closeMenu();
     });
 
     return button;
