@@ -1,6 +1,7 @@
 function qooxdooMain(app: qx.application.Standalone) {
   const root = <qx.ui.container.Composite>app.getRoot();
 
+  // http req
   const appManager = new AppManager(root, {
     appName: "SIAS Online",
     appVersion: "3.8.0",  

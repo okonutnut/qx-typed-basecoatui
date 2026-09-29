@@ -18,7 +18,7 @@ class AppPages {
           label: "General",
           iconName: "list",
           children: [
-            { label: "Campuses", iconName: "building", element: () => new PlaceholderPage("Campuses") },
+            { label: "Campuses", iconName: "building", element: () => new CampusPage() },
             { label: "Departments", iconName: "building-2", element: () => new PlaceholderPage("Departments") },
             { label: "Periods", iconName: "calendar", element: () => new PlaceholderPage("Periods") },
             { label: "Gates (Entry Points)", iconName: "door-open", element: () => new PlaceholderPage("Gates (Entry Points)") },
